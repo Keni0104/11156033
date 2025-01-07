@@ -1,0 +1,124 @@
+{% extends 'mymessages/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            {% if user.is_authenticated %}
+                <div class="card mb-3">
+                    <div class="card-header">發表留言</div>
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            {{ form.content }}
+                            {{ form.category }}
+                            <button type="submit" class="btn btn-primary mt-2">送出留言</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            <form method="get" class="mb-3">
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="搜尋留言" value="{{ request.GET.search }}">
+                    <button type="submit" class="btn btn-primary">搜尋</button>
+                </div>
+            </form>
+
+            <div class="card mb-3">
+                <div class="card-header">熱門文章</div>
+                <div class="card-body">
+                    {% for message in popular_messages %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <p class="mb-1">{{ message.content|truncatechars:50 }}</p>
+                            <small class="text-muted">
+                                {{ message.user.username }} - {{ message.created_at|date:"Y-m-d H:i" }} - 分類: {{ message.get_category_display }}
+                                <span class="float-end">👍 {{ message.likes }} | 👀 {{ message.views }}</span>
+                            </small>
+                        </div>
+                    {% empty %}
+                        <p class="text-center text-muted">尚無熱門文章</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- 追蹤按鈕 -->
+            {% for message in messages_list %}
+                <div class="border-bottom pb-3 mb-3">
+                    <p class="mb-1">{{ message.content }}</p>
+                    <small class="text-muted d-flex justify-content-between">
+                        <span>
+                            {{ message.user.username }} - {{ message.created_at|date:"Y-m-d H:i" }} - 分類: {{ message.get_category_display }}
+                            {% if user.is_authenticated and user != message.user %}
+                                {% if message.user in user.following.all %}
+                                    <a href="{% url 'unfollow_user' message.user.id %}" class="btn btn-sm btn-danger">取消追蹤</a>
+                                {% else %}
+                                    <a href="{% url 'follow_user' message.user.id %}" class="btn btn-sm btn-primary">追蹤</a>
+                                {% endif %}
+                            {% endif %}
+                        </span>
+                        {% if user == message.user %}
+                            <div>
+                                <a href="{% url 'edit_message' message.id %}" class="btn btn-sm btn-warning">編輯</a>
+                                <a href="{% url 'delete_message' message.id %}" class="btn btn-sm btn-danger">刪除</a>
+                            </div>
+                        {% endif %}
+                    </small>
+                </div>
+            {% empty %}
+                <p class="text-center text-muted">尚無留言</p>
+            {% endfor %}
+
+            <!-- 追蹤者的留言 -->
+            <div class="card mb-3">
+                <div class="card-header">追蹤者的留言</div>
+                <div class="card-body">
+                    {% for message in following_messages %}
+                        <div class="border-bottom pb-2 mb-2">
+                            <p class="mb-1">{{ message.content|truncatechars:50 }}</p>
+                            <small class="text-muted">
+                                {{ message.user.username }} - {{ message.created_at|date:"Y-m-d H:i" }} - 分類: {{ message.get_category_display }}
+                            </small>
+                        </div>
+                    {% empty %}
+                        <p class="text-center text-muted">尚無追蹤者的留言</p>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label>分類</label>
+                <select class="form-control" onchange="location = this.value;">
+                    <option value="?">全部</option>
+                    <option value="?category=general" {% if request.GET.category == 'general' %}selected{% endif %}>一般</option>
+                    <option value="?category=tech" {% if request.GET.category == 'tech' %}selected{% endif %}>科技</option>
+                    <option value="?category=life" {% if request.GET.category == 'life' %}selected{% endif %}>生活</option>
+                                        <option value="?category=entertainment" {% if request.GET.category == 'entertainment' %}selected{% endif %}>娛樂</option>
+                </select>
+            </div>
+
+            <div class="card">
+                <div class="card-header">留言列表</div>
+                <div class="card-body">
+                    {% for message in messages_list %}
+                        <div class="border-bottom pb-3 mb-3">
+                            <p class="mb-1">{{ message.content }}</p>
+                            <small class="text-muted d-flex justify-content-between">
+                                <span>{{ message.user.username }} - {{ message.created_at|date:"Y-m-d H:i" }} - 分類: {{ message.get_category_display }}</span>
+                                {% if user == message.user %}
+                                    <div>
+                                        <a href="{% url 'edit_message' message.id %}" class="btn btn-sm btn-warning">編輯</a>
+                                        <a href="{% url 'delete_message' message.id %}" class="btn btn-sm btn-danger">刪除</a>
+                                    </div>
+                                {% endif %}
+                            </small>
+                        </div>
+                    {% empty %}
+                        <p class="text-center text-muted">尚無留言</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
